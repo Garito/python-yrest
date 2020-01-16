@@ -19,6 +19,14 @@ class EmailField(FieldEncoder):
 
 JsonSchemaMixin.register_field_encoders({Email: EmailField()})
 
+Phone = NewType("Phone", str)
+class PhoneField(FieldEncoder):
+  @property
+  def json_schema(self):
+    return {"type": "string", "format": "phone"}
+
+JsonSchemaMixin.register_field_encoders({Phone: PhoneField()})
+
 Password = NewType("Password", str)
 class PasswordField(FieldEncoder):
   @property

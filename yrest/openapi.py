@@ -31,8 +31,8 @@ class OpenApi():
     return result
 
   def _paths(self):
-    from sanic.log import logger
     regex = re.compile("\/new\/\w+$")
+    regexsub = re.compile("\/create_\w+$")
 
     result = self._own_path()
     for name, data in self._introspection.items():
@@ -41,7 +41,7 @@ class OpenApi():
       for e_name, endpoint in data.items():
         if e_name != "factories":
           for path, path_data in self._path(model, e_name, endpoint).items():
-            if not regex.search(path):
+            if not regex.search(path) and not regexsub.search(path):
               for verb, verb_data in path_data.items():
                 if path not in paths:
                   paths[path] = {}
@@ -119,7 +119,11 @@ class OpenApi():
           paths[path]["post"]["parameters"] = self._parameters(model, url)
         else:
           paths[path]["post"]["operationId"] =  f"Root/create_{fact}"
-        paths[path]["post"]["requestBody"] = self._content(getattr(self._models, factory))
+        from pprint import pprint
+        if f"create_{fact}" in data.keys():
+          paths[path]["post"]["requestBody"] = self._content(data[f"create_{fact}"]["consumes"])
+        else:
+          paths[path]["post"]["requestBody"] = self._content(getattr(self._models, factory))
 
         paths[path]["post"]["responses"] = {
           200: {

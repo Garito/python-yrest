@@ -208,13 +208,19 @@ class MongoBase:
         child.path = self.get_url()
         await child.create()
         if indexer:
-          children.append(getattr(child, indexer))
+          idx = getattr(child, indexer)
         elif hasattr(child, "__indexer__"):
-          children.append(getattr(child, child.__indexer__))
+          idx = getattr(child, child.__indexer__)
         else:
-          children.append(child.slug)
+          idx = child.slug
+
+        if isinstance(children, list):
+          children.append(idx)
+        else:
+          children = idx
         update[as_] = children
-        await self.update(models, **update)
+
+        await MongoBase.update(self, models, **update)
 
   async def ancestors(self, models: ModuleType, parent = False) -> Union['Mongo', List['Mongo']]:
     url = PurePath(self.get_url())

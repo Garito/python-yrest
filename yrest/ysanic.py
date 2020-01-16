@@ -333,17 +333,22 @@ class ySanic(Sanic):
 
   @timed
   async def factory(self, request, model, path: str = None):
-    try:
-      consume = getattr(self._models, model.capitalize()).from_dict(request.json)
-    except TypeError as e:
-      return ErrorMessage(message = e.args, code = 400)
-
     path_ = f"/{path or ''}"
     try:
       paper = await self.get_path(path_, self._models, 0)
       paper._table = request.app._table
     except NotFound as e:
       return ErrorMessage(message = e.args[0], code = 404)
+
+    if f"create_{model}" in self._introspection[paper.__class__.__name__]:
+      theModel = self._introspection[paper.__class__.__name__][f"create_{model}"]["consumes"]
+    else:
+      theModel = getattr(self._models, model.capitalize())
+
+    try:
+      consume = theModel.from_dict(request.json)
+    except TypeError as e:
+      return ErrorMessage(message = e.args, code = 400)
 
     perm = await self._models.Permission.get(self._table, context = paper.type, name = f"create_{model}")
     token = AuthToken.get(request.headers)
